@@ -1,0 +1,135 @@
+diff --git a/Makefile b/Makefile
+index bc0d832..58d4d4d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -166,15 +166,15 @@ DEFINES      += -D=WITH_FAMOS
+ DEFINES      += -D=WITH_FIFF
+ DEFINES      += -D=WITH_CHOLMOD
+ DEFINES      += -D=WITHOUT_NETWORK
+-#DEFINES      += -D=WITH_HDF
++DEFINES      += -D=WITH_HDF
+ #DEFINES      += -D=WITH_MATIO
+-#DEFINES      += -D=WITH_LIBXML2 
++DEFINES      += -D=WITH_LIBXML2
+ DEFINES      += -D=WITH_FEF
+ #DEFINES      += -D=WITH_PDP
+-#DEFINES      += -D=WITH_DCMTK
++DEFINES      += -D=WITH_DCMTK
+ #DEFINES      += -D=WITH_DICOM
+-#DEFINES      += -D=WITH_GDCM
+-#DEFINES      += -D=WITH_GSL
++DEFINES      += -D=WITH_GDCM
++DEFINES      += -D=WITH_GSL
+ #DEFINES      += -D=WITH_EEPROBE
+ #DEFINES      += -D=WITH_TDMS
+ #DEFINES      += -D=WITH_ATF
+@@ -187,7 +187,7 @@ DEFINES      += -D=MAKE_EDFLIB
+ 
+ 
+ ifneq (,$(findstring WITH_GDCM, $(DEFINES)))
+-  INCPATH    += -I$(wildcard /usr/include/gdcm-2*/)
++  INCPATH    += -I/usr/include/gdcm
+   LDLIBS     += -lgdcmCommon -lgdcmDSED -lgdcmMEXD -lgdcmMSFF -lgdcmDICT -lgdcmIOD
+ endif
+ ifneq (,$(findstring WITH_ZLIB, $(DEFINES)))
+@@ -200,7 +200,8 @@ ifneq (,$(findstring WITH_CHOLMOD, $(DEFINES)))
+   LDLIBS     += -lcholmod
+ endif
+ ifneq (,$(findstring WITH_LIBXML2, $(DEFINES)))
+-  LDLIBS     += -lxml2
++  INCPATH    += $(shell $(PKGCONF) --cflags libxml-2.0)
++  LDLIBS     += $(shell $(PKGCONF) --libs libxml-2.0)
+ endif
+ ifneq (,$(findstring WITH_CURL, $(DEFINES)))
+   LDLIBS     += -lcurl
+@@ -306,7 +307,7 @@ endif
+ OBJ	      = ./obj
+ INC	      = $(DESTDIR)$(prefix)/include
+ BIN	      = $(DESTDIR)$(prefix)/bin
+-LIB	      = $(DESTDIR)$(prefix)/lib
++LIB	      = @LIBDIR@
+ 
+ 
+ ####### Files
+@@ -689,14 +690,14 @@ libbiosig.pc :
+ 	echo "# Defines libbiosig.pc"       > libbiosig.pc
+ 	echo "prefix=$(prefix)"             >>libbiosig.pc
+ 	echo "exec_prefix=$(prefix)"        >>libbiosig.pc
+-	echo "libdir=$(prefix)/lib"         >>libbiosig.pc
++	echo "libdir=@LIBDIR@"              >>libbiosig.pc
+ 	echo "includedir=$(prefix)/include" >>libbiosig.pc
+ 	echo                                >>libbiosig.pc
+ 	echo "Name: libbiosig"		    >>libbiosig.pc
+ 	echo "Description: Biosig library"  >>libbiosig.pc
+ 	echo "Version: ${MAJOR_VERSION}.${MINOR_VERSION}.${STEPPING}" >>libbiosig.pc
+ 	echo "URL: http://biosig.sf.net"    >>libbiosig.pc
+-	echo "Libs: -L$(prefix)/lib -lbiosig $(LDLIBS)"  >>libbiosig.pc
++	echo "Libs: -L@LIBDIR@ -lbiosig $(LDLIBS)"  >>libbiosig.pc
+ 	#echo "Libs.private: -liconv"  >>libbiosig.pc
+ 	echo "Cflags: -I$(prefix)/include" >>libbiosig.pc
+ 
+@@ -931,23 +932,24 @@ install_headers: biosig-dev.h biosig.h biosig2.h gdftime.h physicalunits.h
+ 	install $?		    	$(INC)
+ 
+ install_libbiosig.a: libbiosig.a libbiosig2.a libphysicalunits.a libgdftime.a
+-	install -d 			$(LIB)/pkgconfig/
+-	install $?			$(LIB)
+-	install libbiosig.pc		$(LIB)/pkgconfig/
++	install -d 			$(DESTDIR)$(LIB)/pkgconfig/
++	install $?			$(DESTDIR)$(LIB)
++	install libbiosig.pc		$(DESTDIR)$(LIB)/pkgconfig/
+ 
+ install_libbiosig.$(DLEXT): libbiosig2.$(FULLDLEXT) libbiosig.$(FULLDLEXT) libphysicalunits.$(DLEXT) libgdftime.$(DLEXT) libbiosig.pc
+-	install -d 			$(LIB)/pkgconfig/
+-	install libbiosig.pc		$(LIB)/pkgconfig/
+-	install $?			$(LIB)
++	install -d 			$(DESTDIR)$(LIB)/pkgconfig/
++	install libbiosig.pc		$(DESTDIR)$(LIB)/pkgconfig/
++	install $?			$(DESTDIR)$(LIB)
++	$(DELETE) 			$(DESTDIR)$(LIB)/libbiosig.pc
+ 
+ install: install_libbiosig.$(DLEXT) install_libbiosig.a install_headers
+-	ln -sf $(LIB)/libbiosig2.${FULLDLEXT}	$(LIB)/libbiosig2${SONAME_POSTFIX}
+-	ln -sf $(LIB)/libbiosig.${FULLDLEXT}	$(LIB)/libbiosig${SONAME_POSTFIX}
+-	ln -sf $(LIB)/libbiosig2${SONAME_POSTFIX}	$(LIB)/libbiosig2.${DLEXT}
+-	ln -sf $(LIB)/libbiosig${SONAME_POSTFIX}	$(LIB)/libbiosig.${DLEXT}
++	ln -sf $(LIB)/libbiosig2.${FULLDLEXT}	$(DESTDIR)$(LIB)/libbiosig2${SONAME_POSTFIX}
++	ln -sf $(LIB)/libbiosig.${FULLDLEXT}	$(DESTDIR)$(LIB)/libbiosig${SONAME_POSTFIX}
++	ln -sf $(LIB)/libbiosig2${SONAME_POSTFIX}	$(DESTDIR)$(LIB)/libbiosig2.${DLEXT}
++	ln -sf $(LIB)/libbiosig${SONAME_POSTFIX}	$(DESTDIR)$(LIB)/libbiosig.${DLEXT}
+ 
+ install_tools install_save2gdf: save2gdf doc/save2gdf.1 install_libbiosig
+-	install -d 			$(BIN) $(LIB) $(INC)
++	install -d 			$(BIN) $(DESTDIR)$(LIB) $(INC)
+ 	install save2gdf  		$(BIN)
+ 	install heka2itx  		$(BIN)
+ 	install save2aecg 		$(BIN)
+diff --git a/t230/sopen_hl7aecg.cpp b/t230/sopen_hl7aecg.cpp
+index ec64bad..b15778e 100644
+--- a/t230/sopen_hl7aecg.cpp
++++ b/t230/sopen_hl7aecg.cpp
+@@ -947,19 +947,19 @@ EXTERN_C int sclose_HL7aECG_write(HDRTYPE* hdr){
+ #ifdef WITH_LIBXML2
+ 	fprintf(stderr,"Warning: LIBXML2 is used instead of TinyXML - support for HL7aECG is very experimental and must not be used for production use! You are warned\n");
+ 
+-	xmlDoc *doc = xmlNewDoc("1.0");
+-	xmlNode *root = xmlNewNode(NULL, "root");
++	xmlDoc *doc = xmlNewDoc((const xmlChar*)"1.0");
++	xmlNode *root = xmlNewNode(NULL, (const xmlChar*)"root");
+ 	xmlDocSetRootElement(doc, root);
+  
+-	xmlNode *node = xmlNewNode(NULL, "element");
+-	xmlAddChild(node, xmlNewText("some text here"));
++	xmlNode *node = xmlNewNode(NULL, (const xmlChar*)"element");
++	xmlAddChild(node, xmlNewText((const xmlChar*)"some text here"));
+ 	xmlAddChild(root, node);
+  
+ 	if (ifopen(hdr, "w")) {
+ 		biosigERROR(hdr, B4C_CANNOT_WRITE_FILE, "Cannot open file for writing");
+ 	} 
+ 	else if (hdr->FILE.COMPRESSION) 
+-		xmlElemDump(hdr->FILE.gzFID, doc, root);
++		xmlElemDump((FILE*)hdr->FILE.gzFID, doc, root);
+ 	else
+ 		xmlElemDump(hdr->FILE.FID, doc, root);
+ 	
